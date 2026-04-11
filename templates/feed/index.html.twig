@@ -1,0 +1,557 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Fil d'actualité — EbookShare{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        /* composer textarea auto-grow */
+        .composer-body { display:none }
+        .composer-card.open .composer-body { display:block }
+        .composer-card.open .composer-hint { display:none }
+        /* hide scrollbar on sidebars */
+        .sidebar-col::-webkit-scrollbar { display: none }
+        .sidebar-col { -ms-overflow-style: none; scrollbar-width: none }
+    </style>
+{% endblock %}
+
+{% block body %}
+
+{# ── NAVBAR ─────────────────────────────────────────────────── #}
+<nav class="bg-white border-b border-gray-100 sticky top-0 z-50 shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+        <a href="{{ path('app_home') }}" class="flex items-center gap-2 text-indigo-700 font-extrabold text-lg">
+            📚 EbookShare
+        </a>
+
+        <div class="hidden md:flex items-center gap-6 text-sm font-medium text-gray-500">
+            <a href="{{ path('app_feed') }}" class="text-indigo-600 font-bold border-b-2 border-indigo-600 pb-0.5">Fil</a>
+            <a href="#" class="hover:text-indigo-600 transition">Explorer</a>
+            <a href="{{ path('app_my_books') }}" class="hover:text-indigo-600 transition">Mes livres</a>
+        </div>
+
+        <div class="flex items-center gap-3">
+            {# Flash notification bell #}
+            <button class="relative p-2 text-gray-400 hover:text-indigo-600 transition">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+                </svg>
+            </button>
+
+            {# User menu #}
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white font-bold text-sm select-none">
+                    {{ app.user.firstname|first|upper }}{{ app.user.lastname|first|upper }}
+                </div>
+                <span class="hidden md:block text-sm font-semibold text-gray-700">@{{ app.user.pseudo }}</span>
+            </div>
+            <a href="{{ path('app_logout') }}"
+               class="text-xs text-gray-400 hover:text-red-500 transition ml-1">
+                Déconnexion
+            </a>
+        </div>
+    </div>
+</nav>
+
+{# ── LAYOUT ──────────────────────────────────────────────────── #}
+<div class="max-w-6xl mx-auto px-4 h-[calc(100vh-3.5rem)] overflow-hidden grid grid-cols-1 md:grid-cols-[240px_1fr_240px] gap-6">
+
+    {# ── LEFT SIDEBAR ─────────────────────────────────────────── #}
+    <aside class="hidden md:flex flex-col gap-4 overflow-y-auto py-6 sidebar-col">
+
+        {# Profile card #}
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div class="h-16 bg-gradient-to-r from-indigo-500 to-violet-500"></div>
+            <div class="px-4 pb-4 -mt-7">
+                <div class="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white font-extrabold text-lg border-4 border-white shadow">
+                    {{ app.user.firstname|first|upper }}{{ app.user.lastname|first|upper }}
+                </div>
+                <p class="font-bold text-gray-900 mt-2 text-sm">{{ app.user.firstname }} {{ app.user.lastname }}</p>
+                <p class="text-indigo-600 text-xs font-semibold">@{{ app.user.pseudo }}</p>
+                <p class="text-gray-400 text-xs mt-0.5">{{ app.user.email }}</p>
+            </div>
+        </div>
+
+        {# Nav links #}
+        <nav class="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 space-y-0.5 text-sm">
+            <a href="{{ path('app_feed') }}" class="flex items-center gap-3 px-3 py-2 rounded-xl bg-indigo-50 text-indigo-700 font-semibold">
+                <span>🏠</span> Fil d'actualité
+            </a>
+            <a href="{{ path('app_my_books') }}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-indigo-600 transition">
+                <span>📚</span> Mes livres
+            </a>
+            <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-indigo-600 transition">
+                <span>❤️</span> Mes favoris
+            </a>
+            <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-indigo-600 transition">
+                <span>🔍</span> Explorer
+            </a>
+            <a href="{{ path('app_logout') }}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-gray-400 hover:bg-red-50 hover:text-red-500 transition">
+                <span>🚪</span> Déconnexion
+            </a>
+        </nav>
+    </aside>
+
+    {# ── CENTER FEED ───────────────────────────────────────────── #}
+    <main class="space-y-4 min-w-0 overflow-y-auto py-6">
+
+        {# ── FLASH MESSAGES ──────────────────────────────────── #}
+        {% for type, messages in app.flashes %}
+            {% for msg in messages %}
+                <div class="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium
+                    {{ type == 'success' ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700' }}">
+                    <span>{{ type == 'success' ? '✅' : '⚠️' }}</span>
+                    <span>{{ msg }}</span>
+                </div>
+            {% endfor %}
+        {% endfor %}
+
+        {# ── COMPOSE CARD ─────────────────────────────────────── #}
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 composer-card" id="composerCard">
+
+            {# Compact trigger #}
+            <div class="flex items-center gap-3 cursor-pointer composer-hint" onclick="openComposer()">
+                <div class="w-9 h-9 flex-shrink-0 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white font-bold text-sm">
+                    {{ app.user.firstname|first|upper }}{{ app.user.lastname|first|upper }}
+                </div>
+                <div class="flex-1 bg-gray-100 hover:bg-gray-200 transition rounded-full px-4 py-2.5 text-sm text-gray-400 font-medium">
+                    Publier un nouveau livre…
+                </div>
+                <button class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded-full transition">
+                    Publier
+                </button>
+            </div>
+
+            {# Expanded form #}
+            <div class="composer-body">
+                {{ form_start(form, {attr: {enctype: 'multipart/form-data', class: 'space-y-4', novalidate: 'novalidate'}}) }}
+
+                {# Inline styles for form widgets (same as register) #}
+                <style>
+                    .compose-field label { display:block; font-size:.8rem; font-weight:600; color:#6b7280; margin-bottom:.3rem; text-transform:uppercase; letter-spacing:.05em }
+                    .compose-field input[type=text], .compose-field textarea {
+                        width:100%; padding:.65rem 1rem; border-radius:.75rem;
+                        border:1px solid #e5e7eb; background:#f9fafb; font-size:.875rem; transition:all .15s;
+                    }
+                    .compose-field input:focus, .compose-field textarea:focus { outline:none; background:#fff; border-color:transparent; box-shadow:0 0 0 2px #6366f1; }
+                    .compose-field input[type=file] { font-size:.8rem; color:#6b7280; }
+                </style>
+
+                <div class="flex items-start gap-3">
+                    <div class="w-9 h-9 flex-shrink-0 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white font-bold text-sm mt-1">
+                        {{ app.user.firstname|first|upper }}{{ app.user.lastname|first|upper }}
+                    </div>
+                    <div class="flex-1 space-y-3">
+                        <div class="compose-field">
+                            {{ form_label(form.title) }}
+                            {{ form_widget(form.title) }}
+                            {{ form_errors(form.title) }}
+                        </div>
+                        <div class="compose-field">
+                            {{ form_label(form.description) }}
+                            {{ form_widget(form.description) }}
+                            {{ form_errors(form.description) }}
+                        </div>
+                        <div class="compose-field">
+                            {{ form_label(form.bookFile) }}
+                            {{ form_widget(form.bookFile) }}
+                            {{ form_errors(form.bookFile) }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-1 border-t border-gray-100">
+                    <button type="button" onclick="closeComposer()" class="text-sm text-gray-400 hover:text-gray-600 px-4 py-2 rounded-full transition">
+                        Annuler
+                    </button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm px-6 py-2 rounded-full shadow transition">
+                        📚 Publier le livre
+                    </button>
+                </div>
+
+                {{ form_end(form) }}
+            </div>
+        </div>
+
+        {# ── FEED ─────────────────────────────────────────────── #}
+        <div class="space-y-4">
+            {% for book in books %}
+                {% set likesCount    = book.likes|length %}
+                {% set commentsCount = book.comments|length %}
+                {% set isOwnBook     = app.user == book.owner %}
+                {% set userLiked     = book.likes|filter(l => l.owner == app.user)|length > 0 %}
+
+                <article class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition overflow-hidden group">
+
+                    {# Color accent top stripe based on id #}
+                    <div class="h-1 w-full bg-gradient-to-r
+                        {% if book.id % 4 == 0 %}from-indigo-500 to-violet-500
+                        {% elseif book.id % 4 == 1 %}from-violet-500 to-purple-500
+                        {% elseif book.id % 4 == 2 %}from-pink-500 to-rose-400
+                        {% else %}from-teal-400 to-cyan-500{% endif %}">
+                    </div>
+
+                    <div class="p-5">
+                        {# Header: owner info + date #}
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-400 to-violet-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                                    {{ book.owner.firstname|first|upper }}{{ book.owner.lastname|first|upper }}
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-gray-900 leading-none">
+                                        {{ book.owner.firstname }} {{ book.owner.lastname }}
+                                        {% if isOwnBook %}
+                                            <span class="ml-1 text-xs bg-indigo-100 text-indigo-600 font-semibold px-1.5 py-0.5 rounded-full">Vous</span>
+                                        {% endif %}
+                                    </p>
+                                    <p class="text-xs text-gray-400 mt-0.5">
+                                        @{{ book.owner.pseudo }} · {{ book.uploadetat|date('d M Y') }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {# PDF badge #}
+                            {% if book.filepath %}
+                                <span class="flex items-center gap-1 bg-red-50 border border-red-100 text-red-600 text-xs font-semibold px-2 py-1 rounded-full flex-shrink-0">
+                                    📄 PDF
+                                </span>
+                            {% else %}
+                                <span class="flex items-center gap-1 bg-gray-50 border border-gray-100 text-gray-400 text-xs px-2 py-1 rounded-full flex-shrink-0">
+                                    En ligne
+                                </span>
+                            {% endif %}
+                        </div>
+
+                        {# Book cover placeholder + content #}
+                        <div class="flex gap-4">
+                            <div class="hidden sm:flex w-16 h-20 flex-shrink-0 rounded-xl bg-gradient-to-br
+                                {% if book.id % 4 == 0 %}from-indigo-100 to-violet-200
+                                {% elseif book.id % 4 == 1 %}from-violet-100 to-purple-200
+                                {% elseif book.id % 4 == 2 %}from-pink-100 to-rose-200
+                                {% else %}from-teal-100 to-cyan-200{% endif %}
+                                items-center justify-center text-2xl shadow-inner">
+                                📖
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h2 class="font-extrabold text-gray-900 text-base leading-snug mb-1 line-clamp-1">
+                                    {{ book.title }}
+                                </h2>
+                                <p class="text-gray-500 text-sm leading-relaxed line-clamp-3">
+                                    {{ book.description }}
+                                </p>
+                            </div>
+                        </div>
+
+                        {# Separator #}
+                        <div class="border-t border-gray-100 mt-4 pt-3">
+                            <div class="flex items-center justify-between">
+
+                                {# Stats #}
+                                <div class="flex items-center gap-4 text-sm text-gray-400">
+                                    <button
+                                        id="like-btn-{{ book.id }}"
+                                        onclick="toggleLike({{ book.id }}, '{{ path('app_feed_like', {id: book.id}) }}')"
+                                        class="flex items-center gap-1.5 transition group/like {{ userLiked ? 'text-red-500' : 'hover:text-red-500' }}">
+                                        <svg class="w-4 h-4 group-hover/like:scale-110 transition" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                             fill="{{ userLiked ? 'currentColor' : 'none' }}"
+                                             id="like-icon-{{ book.id }}">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"/>
+                                        </svg>
+                                        <span class="font-semibold {{ userLiked ? 'text-red-500' : (likesCount > 0 ? 'text-red-400' : '') }}"
+                                              id="like-count-{{ book.id }}">{{ likesCount }}</span>
+                                    </button>
+
+                                    <button onclick="toggleComments({{ book.id }})" class="flex items-center gap-1.5 hover:text-indigo-500 transition" id="comment-btn-{{ book.id }}">
+                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 0 1-.923 1.785A5.969 5.969 0 0 0 6 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337Z"/>
+                                        </svg>
+                                        <span class="font-semibold {% if commentsCount > 0 %}text-indigo-400{% endif %}" id="comment-count-{{ book.id }}">{{ commentsCount }}</span>
+                                    </button>
+                                </div>
+
+                                {# Actions #}
+                                <div class="flex items-center gap-2">
+                                    {% if book.filepath %}
+                                        <a href="/{{ book.filepath }}" download
+                                           class="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-indigo-600 bg-gray-50 hover:bg-indigo-50 border border-gray-200 hover:border-indigo-200 px-3 py-1.5 rounded-full transition">
+                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/>
+                                            </svg>
+                                            Télécharger
+                                        </a>
+                                        <a href="/{{ book.filepath }}" target="_blank"
+                                           class="flex items-center gap-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-full transition shadow-sm">
+                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.641 0-8.574-3.007-9.964-7.178Z"/>
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+                                            </svg>
+                                            Lire
+                                        </a>
+                                    {% else %}
+                                        <span class="text-xs text-gray-300 italic">Pas de fichier</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# ── COMMENTS PANEL ───────────────────────────────────── #}
+                    <div id="comments-{{ book.id }}" class="hidden border-t border-gray-100">
+                        <div class="px-5 pt-3 pb-4 space-y-3">
+
+                            {# Existing comments #}
+                            <div id="comment-list-{{ book.id }}" class="space-y-2.5">
+                                {% if book.comments is empty %}
+                                    <p class="text-xs text-gray-400 italic text-center py-2" id="no-comment-{{ book.id }}">Aucun commentaire pour l'instant. Soyez le premier !</p>
+                                {% endif %}
+                                {% for comment in book.comments %}
+                                    <div class="flex gap-2.5">
+                                        <div class="w-7 h-7 flex-shrink-0 rounded-full bg-gradient-to-br from-indigo-400 to-violet-500 flex items-center justify-center text-white font-bold text-xs">
+                                            {{ comment.author.firstname|first|upper }}{{ comment.author.lastname|first|upper }}
+                                        </div>
+                                        <div class="flex-1 bg-gray-50 rounded-xl px-3 py-2">
+                                            <div class="flex items-baseline gap-1.5">
+                                                <span class="text-xs font-bold text-gray-800">{{ comment.author.firstname }} {{ comment.author.lastname }}</span>
+                                                <span class="text-xs text-indigo-500">@{{ comment.author.pseudo }}</span>
+                                                <span class="text-xs text-gray-300 ml-auto">{{ comment.createdat|date('d M Y H:i') }}</span>
+                                            </div>
+                                            <p class="text-sm text-gray-700 mt-0.5">{{ comment.content }}</p>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+
+                            {# New comment form #}
+                            <form class="flex gap-2 pt-1" onsubmit="postComment(event, {{ book.id }}, '{{ path('app_feed_comment', {id: book.id}) }}')">
+                                <div class="w-7 h-7 flex-shrink-0 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white font-bold text-xs mt-0.5">
+                                    {{ app.user.firstname|first|upper }}{{ app.user.lastname|first|upper }}
+                                </div>
+                                <div class="flex-1 flex gap-2">
+                                    <input type="text"
+                                           id="comment-input-{{ book.id }}"
+                                           placeholder="Écrire un commentaire…"
+                                           maxlength="500"
+                                           class="flex-1 text-sm bg-gray-100 rounded-full px-4 py-1.5 border border-transparent focus:outline-none focus:border-indigo-300 focus:bg-white transition"
+                                    />
+                                    <button type="submit"
+                                            class="flex-shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-1.5 rounded-full transition">
+                                        Envoyer
+                                    </button>
+                                </div>
+                            </form>
+
+                        </div>
+                    </div>
+
+                </article>
+            {% else %}
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center text-gray-400">
+                    <div class="text-5xl mb-3">📭</div>
+                    <p class="font-semibold">Aucun livre publié pour l'instant.</p>
+                    <p class="text-sm mt-1">Soyez le premier à partager un livre !</p>
+                </div>
+            {% endfor %}
+        </div>
+
+        {# ── PAGINATION ────────────────────────────────────────── #}
+        {% if lastPage > 1 %}
+            <div class="flex justify-center items-center gap-2 py-4">
+                {% if page > 1 %}
+                    <a href="{{ path('app_feed', {page: page - 1}) }}"
+                       class="px-4 py-2 text-sm font-semibold text-indigo-600 bg-white border border-indigo-200 rounded-full hover:bg-indigo-50 transition">
+                        ← Précédent
+                    </a>
+                {% endif %}
+
+                <span class="text-sm text-gray-400 px-3">Page {{ page }} / {{ lastPage }}</span>
+
+                {% if page < lastPage %}
+                    <a href="{{ path('app_feed', {page: page + 1}) }}"
+                       class="px-4 py-2 text-sm font-semibold text-indigo-600 bg-white border border-indigo-200 rounded-full hover:bg-indigo-50 transition">
+                        Suivant →
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </main>
+
+    {# ── RIGHT SIDEBAR ────────────────────────────────────────── #}
+    <aside class="hidden md:flex flex-col gap-4 overflow-y-auto py-6 sidebar-col">
+
+        {# Stats card #}
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Statistiques</h3>
+            <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600 flex items-center gap-2">📚 Livres publiés</span>
+                    <span class="font-bold text-indigo-600">{{ total }}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600 flex items-center gap-2">📄 Page</span>
+                    <span class="font-bold text-gray-700">{{ page }} / {{ lastPage }}</span>
+                </div>
+            </div>
+        </div>
+
+        {# Top liked books (from current page) #}
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">🔥 Tendances</h3>
+            <div class="space-y-3">
+                {% for book in books|sort((a, b) => b.likes|length - a.likes|length)|slice(0, 5) %}
+                    <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center text-xs flex-shrink-0">📖</div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs font-semibold text-gray-800 truncate">{{ book.title }}</p>
+                            <p class="text-xs text-gray-400">❤️ {{ book.likes|length }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {# Invite CTA #}
+        <div class="bg-gradient-to-br from-indigo-600 to-violet-600 rounded-2xl p-4 text-white text-center">
+            <p class="text-2xl mb-2">🌍</p>
+            <p class="font-bold text-sm mb-1">Invitez vos amis</p>
+            <p class="text-indigo-100 text-xs mb-3">Partagez EbookShare avec votre entourage</p>
+            <button onclick="navigator.clipboard?.writeText(window.location.origin).then(() => alert('Lien copié !'))"
+                class="bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-4 py-1.5 rounded-full transition">
+                Copier le lien
+            </button>
+        </div>
+    </aside>
+
+</div>
+
+<script>
+function openComposer() {
+    document.getElementById('composerCard').classList.add('open');
+    document.querySelector('#composerCard .compose-field input, #composerCard .compose-field textarea')?.focus();
+}
+function closeComposer() {
+    document.getElementById('composerCard').classList.remove('open');
+}
+// Auto-open if form has errors (after failed submit)
+{% if form.vars.submitted and not form.vars.valid %}
+document.addEventListener('DOMContentLoaded', () => openComposer());
+{% endif %}
+
+/* ── Likes ──────────────────────────────────────────────────── */
+async function toggleLike(bookId, url) {
+    const btn      = document.getElementById('like-btn-' + bookId);
+    const icon     = document.getElementById('like-icon-' + bookId);
+    const countEl  = document.getElementById('like-count-' + bookId);
+    if (btn.disabled) return;
+    btn.disabled = true;
+
+    try {
+        const res  = await fetch(url, {
+            method:  'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        });
+        const data = await res.json();
+
+        if (!res.ok) return;
+
+        countEl.textContent = data.count;
+
+        if (data.liked) {
+            icon.setAttribute('fill', 'currentColor');
+            btn.classList.add('text-red-500');
+            btn.classList.remove('hover:text-red-500', 'text-gray-400');
+            countEl.classList.add('text-red-500');
+        } else {
+            icon.setAttribute('fill', 'none');
+            btn.classList.remove('text-red-500');
+            btn.classList.add('hover:text-red-500');
+            countEl.classList.remove('text-red-500');
+            if (data.count > 0) countEl.classList.add('text-red-400');
+            else countEl.classList.remove('text-red-400');
+        }
+    } catch(e) {
+        console.error(e);
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+/* ── Comments ───────────────────────────────────────────────── */
+function toggleComments(bookId) {
+    const panel = document.getElementById('comments-' + bookId);
+    const btn   = document.getElementById('comment-btn-' + bookId);
+    const isOpen = !panel.classList.contains('hidden');
+
+    panel.classList.toggle('hidden');
+    btn.classList.toggle('text-indigo-600', !isOpen);
+
+    if (!isOpen) {
+        const input = document.getElementById('comment-input-' + bookId);
+        if (input) setTimeout(() => input.focus(), 50);
+    }
+}
+
+async function postComment(event, bookId, url) {
+    event.preventDefault();
+
+    const input   = document.getElementById('comment-input-' + bookId);
+    const content = input.value.trim();
+    if (!content) { input.focus(); return; }
+
+    const btn = event.target.querySelector('button[type=submit]');
+    btn.disabled = true;
+    btn.textContent = '…';
+
+    try {
+        const res  = await fetch(url, {
+            method:  'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded' },
+            body:    new URLSearchParams({ content }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+            alert(data.error || 'Une erreur est survenue.');
+            return;
+        }
+
+        // Remove "no comments yet" placeholder if present
+        const placeholder = document.getElementById('no-comment-' + bookId);
+        if (placeholder) placeholder.remove();
+
+        // Append new comment to list
+        const list = document.getElementById('comment-list-' + bookId);
+        const initials = (data.author.firstname[0] + data.author.lastname[0]).toUpperCase();
+        list.insertAdjacentHTML('beforeend', `
+            <div class="flex gap-2.5">
+                <div class="w-7 h-7 flex-shrink-0 rounded-full bg-gradient-to-br from-indigo-400 to-violet-500 flex items-center justify-center text-white font-bold text-xs">
+                    ${initials}
+                </div>
+                <div class="flex-1 bg-gray-50 rounded-xl px-3 py-2">
+                    <div class="flex items-baseline gap-1.5">
+                        <span class="text-xs font-bold text-gray-800">${data.author.firstname} ${data.author.lastname}</span>
+                        <span class="text-xs text-indigo-500">@${data.author.pseudo}</span>
+                        <span class="text-xs text-gray-300 ml-auto">${data.createdat}</span>
+                    </div>
+                    <p class="text-sm text-gray-700 mt-0.5">${data.content}</p>
+                </div>
+            </div>
+        `);
+
+        // Update comment count badge
+        const countEl = document.getElementById('comment-count-' + bookId);
+        if (countEl) countEl.textContent = parseInt(countEl.textContent || '0') + 1;
+
+        input.value = '';
+        list.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    } catch (e) {
+        alert('Erreur réseau. Veuillez réessayer.');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Envoyer';
+    }
+}
+</script>
+
+{% endblock %}

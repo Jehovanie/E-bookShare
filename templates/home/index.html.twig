@@ -1,0 +1,218 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}EbookShare — Partagez vos livres avec le monde{% endblock %}
+
+{% block body %}
+
+{# ── NAVBAR ───────────────────────────────────────────────────── #}
+<nav class="bg-white shadow-sm sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+        <a href="/" class="flex items-center gap-2 text-indigo-700 font-extrabold text-xl tracking-tight">
+            📚 <span>EbookShare</span>
+        </a>
+        <div class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
+            <a href="#features" class="hover:text-indigo-600 transition">Fonctionnalités</a>
+            <a href="#how" class="hover:text-indigo-600 transition">Comment ça marche</a>
+            <a href="#" class="hover:text-indigo-600 transition">Explorer</a>
+        </div>
+        
+        {% if not app.user %}
+        <div class="flex items-center gap-3">
+            <a href="{{ path('app_login') }}" class="text-sm font-medium text-gray-600 hover:text-indigo-600 transition">Connexion</a>
+            <a href="{{ path('app_register') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-5 py-2 rounded-full transition shadow">
+                Créer un compte
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</nav>
+
+{# ── HERO ─────────────────────────────────────────────────────── #}
+<section class="relative bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 text-white overflow-hidden">
+    <div class="absolute inset-0 opacity-10"
+         style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+    <div class="relative max-w-6xl mx-auto px-6 py-28 flex flex-col md:flex-row items-center gap-14">
+        <div class="flex-1 text-center md:text-left">
+            <span class="inline-block bg-white/20 text-white text-xs font-semibold px-4 py-1.5 rounded-full mb-6 tracking-wide uppercase">
+                Plateforme de partage de livres
+            </span>
+            <h1 class="text-4xl md:text-6xl font-extrabold leading-tight mb-6">
+                Partagez vos livres,<br>
+                <span class="text-yellow-300">inspirez le monde.</span>
+            </h1>
+            <p class="text-indigo-100 text-lg md:text-xl mb-10 max-w-lg">
+                Publiez vos e-books, lisez ceux des autres, laissez des commentaires, likez vos favoris et téléchargez en un clic. La bibliothèque communautaire est ici.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                {% if app.user %}
+                    <a href="{{ path('app_feed') }}" class="bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold px-8 py-4 rounded-full text-base shadow-lg transition">
+                        📖 Accéder au fil
+                    </a>
+                {% else %}
+                    <a href="{{ path('app_register') }}" class="bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold px-8 py-4 rounded-full text-base shadow-lg transition">
+                        🚀 Créer mon compte gratuit
+                    </a>
+                    <a href="{{ path('app_login') }}" class="bg-white/10 hover:bg-white/20 border border-white/30 text-white font-semibold px-8 py-4 rounded-full text-base transition">
+                        🔍 Se connecter
+                    </a>
+                {% endif %}
+            </div>
+            <p class="text-indigo-200 text-sm mt-6">Gratuit · Sans carte bancaire · Communauté bienveillante</p>
+        </div>
+        <div class="flex-1 flex justify-center">
+            <div class="relative w-72 h-80">
+                <div class="absolute top-0 left-0 w-52 h-72 bg-white/20 backdrop-blur rounded-2xl shadow-2xl flex flex-col items-center justify-center gap-3 p-6">
+                    <div class="text-6xl">📖</div>
+                    <div class="text-center">
+                        <p class="font-bold text-white text-sm">Le Petit Prince</p>
+                        <p class="text-indigo-200 text-xs">Antoine de Saint-Exupéry</p>
+                    </div>
+                    <div class="flex gap-3 text-sm text-white/80 mt-2">
+                        <span>❤️ 1.2k</span>
+                        <span>💬 348</span>
+                        <span>⬇️ 892</span>
+                    </div>
+                </div>
+                <div class="absolute bottom-0 right-0 w-48 h-64 bg-white/10 backdrop-blur rounded-2xl shadow-xl flex flex-col items-center justify-center gap-3 p-5">
+                    <div class="text-5xl">🔬</div>
+                    <div class="text-center">
+                        <p class="font-bold text-white text-xs">Cosmos</p>
+                        <p class="text-indigo-200 text-xs">Carl Sagan</p>
+                    </div>
+                    <div class="flex gap-2 text-xs text-white/80 mt-1">
+                        <span>❤️ 980</span>
+                        <span>💬 210</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="h-16 bg-gradient-to-b from-transparent to-gray-50"></div>
+</section>
+
+{# ── STATS ─────────────────────────────────────────────────────── #}
+<section class="bg-gray-50 py-12">
+    <div class="max-w-4xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+        <div>
+            <p class="text-4xl font-extrabold text-indigo-600">10k+</p>
+            <p class="text-gray-500 text-sm mt-1">Livres publiés</p>
+        </div>
+        <div>
+            <p class="text-4xl font-extrabold text-violet-600">5k+</p>
+            <p class="text-gray-500 text-sm mt-1">Lecteurs actifs</p>
+        </div>
+        <div>
+            <p class="text-4xl font-extrabold text-purple-600">50k+</p>
+            <p class="text-gray-500 text-sm mt-1">Téléchargements</p>
+        </div>
+        <div>
+            <p class="text-4xl font-extrabold text-pink-600">100%</p>
+            <p class="text-gray-500 text-sm mt-1">Gratuit</p>
+        </div>
+    </div>
+</section>
+
+{# ── FEATURES ─────────────────────────────────────────────────── #}
+<section id="features" class="bg-white py-24">
+    <div class="max-w-6xl mx-auto px-6">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">Tout ce dont vous avez besoin</h2>
+            <p class="text-gray-500 text-lg max-w-xl mx-auto">Une plateforme complète pour publier, découvrir, lire et partager des e-books.</p>
+        </div>
+        <div class="grid md:grid-cols-3 gap-8">
+            <div class="group bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-2xl p-8 hover:shadow-lg transition">
+                <div class="text-4xl mb-4">✍️</div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Publiez votre livre</h3>
+                <p class="text-gray-600 text-sm leading-relaxed">Partagez vos créations avec la communauté en quelques clics. Romans, essais, tutoriels, tout est bienvenu.</p>
+            </div>
+            <div class="group bg-gradient-to-br from-violet-50 to-violet-100 rounded-2xl p-8 hover:shadow-lg transition">
+                <div class="text-4xl mb-4">📖</div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Lisez en ligne</h3>
+                <p class="text-gray-600 text-sm leading-relaxed">Profitez d'un lecteur intégré fluide. Lisez directement dans votre navigateur, sans application tierce.</p>
+            </div>
+            <div class="group bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-8 hover:shadow-lg transition">
+                <div class="text-4xl mb-4">⬇️</div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Téléchargez</h3>
+                <p class="text-gray-600 text-sm leading-relaxed">Téléchargez les livres pour les lire hors-ligne, sur vos appareils préférés, à tout moment.</p>
+            </div>
+            <div class="group bg-gradient-to-br from-pink-50 to-pink-100 rounded-2xl p-8 hover:shadow-lg transition">
+                <div class="text-4xl mb-4">❤️</div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Likez vos favoris</h3>
+                <p class="text-gray-600 text-sm leading-relaxed">Exprimez votre appréciation et aidez les meilleurs livres à remonter dans les recommandations.</p>
+            </div>
+            <div class="group bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-2xl p-8 hover:shadow-lg transition">
+                <div class="text-4xl mb-4">💬</div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Commentez</h3>
+                <p class="text-gray-600 text-sm leading-relaxed">Laissez des avis, échangez avec les auteurs et rejoignez des discussions autour des livres.</p>
+            </div>
+            <div class="group bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-8 hover:shadow-lg transition">
+                <div class="text-4xl mb-4">🌍</div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Communauté mondiale</h3>
+                <p class="text-gray-600 text-sm leading-relaxed">Connectez-vous avec des lecteurs et auteurs du monde entier. Tous les genres, toutes les langues.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+{# ── HOW IT WORKS ─────────────────────────────────────────────── #}
+<section id="how" class="bg-gray-50 py-24">
+    <div class="max-w-5xl mx-auto px-6">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">Comment ça marche ?</h2>
+            <p class="text-gray-500 text-lg">En 3 étapes simples</p>
+        </div>
+        <div class="grid md:grid-cols-3 gap-10 relative">
+            <div class="hidden md:block absolute top-10 left-1/4 right-1/4 h-0.5 bg-indigo-200"></div>
+            <div class="text-center">
+                <div class="w-20 h-20 bg-indigo-600 text-white text-3xl rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">1</div>
+                <h3 class="text-lg font-bold text-gray-800 mb-2">Créez un compte</h3>
+                <p class="text-gray-500 text-sm">Inscription gratuite en 30 secondes. Email et mot de passe suffisent.</p>
+            </div>
+            <div class="text-center">
+                <div class="w-20 h-20 bg-violet-600 text-white text-3xl rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">2</div>
+                <h3 class="text-lg font-bold text-gray-800 mb-2">Publiez ou explorez</h3>
+                <p class="text-gray-500 text-sm">Mettez en ligne votre livre ou parcourez la bibliothèque communautaire.</p>
+            </div>
+            <div class="text-center">
+                <div class="w-20 h-20 bg-purple-600 text-white text-3xl rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">3</div>
+                <h3 class="text-lg font-bold text-gray-800 mb-2">Partagez & interagissez</h3>
+                <p class="text-gray-500 text-sm">Likez, commentez, téléchargez et connectez-vous avec des milliers de lecteurs.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+{# ── CTA ──────────────────────────────────────────────────────── #}
+<section class="bg-gradient-to-r from-indigo-600 to-violet-600 py-24 text-white text-center">
+    <div class="max-w-3xl mx-auto px-6">
+        <h2 class="text-3xl md:text-5xl font-extrabold mb-6 leading-tight">
+            Prêt à partager votre histoire ?
+        </h2>
+        <p class="text-indigo-100 text-lg mb-10">
+            Rejoignez des milliers d'auteurs et lecteurs qui partagent leur passion pour les livres chaque jour.
+        </p>
+        <a href="#" class="inline-block bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-extrabold px-10 py-5 rounded-full text-lg shadow-xl transition">
+            🎉 Rejoindre la communauté — C'est gratuit !
+        </a>
+        <p class="text-indigo-200 text-sm mt-6">Plus de 5 000 membres nous font déjà confiance.</p>
+    </div>
+</section>
+
+{# ── FOOTER ───────────────────────────────────────────────────── #}
+<footer class="bg-gray-900 text-gray-400 py-12">
+    <div class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div class="text-center md:text-left">
+            <p class="text-white font-extrabold text-lg">📚 EbookShare</p>
+            <p class="text-sm mt-1">La bibliothèque communautaire gratuite.</p>
+        </div>
+        <div class="flex gap-6 text-sm">
+            <a href="#" class="hover:text-white transition">À propos</a>
+            <a href="#" class="hover:text-white transition">Contact</a>
+            <a href="#" class="hover:text-white transition">Confidentialité</a>
+            <a href="#" class="hover:text-white transition">CGU</a>
+        </div>
+        <p class="text-xs text-gray-600">© {{ "now"|date("Y") }} EbookShare. Tous droits réservés.</p>
+    </div>
+</footer>
+
+{% endblock %}
