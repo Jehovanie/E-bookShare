@@ -1,0 +1,40 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker
+.dockerignore
+docker-compose*.yml
+compose*.yaml
+Dockerfile
+
+# Dev / CI
+.github
+.env.local
+.env.test
+.env.*.local
+
+# Symfony var (rebuilt inside container)
+var/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Assets source (compiled assets are copied from Stage 1)
+# assets/ is needed for build, keep it
+
+# Tests
+tests/
+phpunit.dist.xml
+
+# IDE & OS
+.idea/
+.vscode/
+*.DS_Store
+*.sublime-*
+Thumbs.db
+
+# Docs
+README.md
