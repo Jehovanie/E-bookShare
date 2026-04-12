@@ -59,14 +59,14 @@ COPY . .
 # Compiled assets from Stage 1
 COPY --from=assets /app/public/build public/build/
 
-# Create writable directories and fix permissions
+# Create writable directories, warm up cache as www-data, then fix all permissions
 RUN mkdir -p var/cache var/log public/books \
     && chown -R www-data:www-data var public/books \
-    && chmod -R 775 var public/books
-
-# Dump .env variables and warm up cache
-RUN APP_ENV=prod composer dump-env prod \
-    && APP_ENV=prod php bin/console cache:warmup --no-debug
+    && chmod -R 775 var public/books \
+    && composer dump-env prod \
+    && su www-data -s /bin/sh -c "APP_ENV=prod php bin/console cache:warmup --no-debug" \
+    && chown -R www-data:www-data var \
+    && chmod -R 775 var
 
 # Expose HTTP
 EXPOSE 80
