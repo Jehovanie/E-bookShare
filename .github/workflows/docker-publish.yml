@@ -52,6 +52,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           # Cache layers between runs using the registry itself
@@ -64,3 +65,47 @@ jobs:
           echo "✅ Image pushed successfully"
           echo "Tags:"
           echo "${{ steps.meta.outputs.tags }}"
+
+      # ── 7. Notification Discord (succès) ─────────────────────
+      - name: Send success Discord notification
+        if: success()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          status: success
+          title: "✅ Image Docker publiée"
+          description: |
+            L'image **${{ secrets.DOCKERHUB_USERNAME }}/ebookshare:latest** a été publiée sur Docker Hub.
+
+            **Branche :** `${{ github.ref_name }}`
+            **Commit :** `${{ github.sha }}`
+            **Déclenché par :** ${{ github.actor }}
+            **Platforms :** linux/amd64, linux/arm64
+
+            Pour mettre à jour le serveur :
+            ```
+            docker compose pull && docker compose up -d
+            ```
+          color: 0x22c55e
+          username: GitHub Actions
+          avatar_url: https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png
+
+      # ── 8. Notification Discord (échec) ──────────────────────
+      - name: Send failure Discord notification
+        if: failure()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          status: failure
+          title: "❌ Échec du build Docker"
+          description: |
+            Le build Docker de **EbookShare** a échoué. L'image n'a **pas** été publiée.
+
+            **Branche :** `${{ github.ref_name }}`
+            **Commit :** `${{ github.sha }}`
+            **Déclenché par :** ${{ github.actor }}
+
+            [🔍 Voir les logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          color: 0xef4444
+          username: GitHub Actions
+          avatar_url: https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png
