@@ -59,15 +59,25 @@ COPY . .
 # Compiled assets from Stage 1
 COPY --from=assets /app/public/build public/build/
 
-# Create writable directories, install JS vendor packages, compile assets, warm up cache
+# Writable directories
 RUN mkdir -p var/cache var/log public/books public/assets \
     && chown -R www-data:www-data var public/books public/assets \
-    && chmod -R 775 var public/books public/assets \
-    && composer dump-env prod \
-    && php bin/console importmap:install \
-    && su www-data -s /bin/sh -c "APP_ENV=prod php bin/console asset-map:compile --no-debug" \
-    && su www-data -s /bin/sh -c "APP_ENV=prod php bin/console cache:warmup --no-debug" \
-    && chown -R www-data:www-data var public/assets \
+    && chmod -R 775 var public/books public/assets
+
+# Dump env for production (reads .env, produces .env.local.php)
+RUN composer dump-env prod
+
+# Install JS vendor packages declared in importmap.php
+RUN php bin/console importmap:install
+
+# Compile and fingerprint all assets into public/assets/
+RUN su www-data -s /bin/sh -c "APP_ENV=prod APP_DEBUG=0 php bin/console asset-map:compile --no-debug"
+
+# Warm up the Symfony cache
+RUN su www-data -s /bin/sh -c "APP_ENV=prod APP_DEBUG=0 php bin/console cache:warmup --no-debug"
+
+# Final permission fix on everything created above
+RUN chown -R www-data:www-data var public/assets \
     && chmod -R 775 var public/assets
 
 # Expose HTTP
