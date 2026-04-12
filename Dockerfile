@@ -60,9 +60,7 @@ COPY . .
 COPY --from=assets /app/public/build public/build/
 
 # Writable directories
-RUN mkdir -p var/cache var/log public/books public/assets \
-    && chown -R www-data:www-data var public/books public/assets \
-    && chmod -R 775 var public/books public/assets
+RUN mkdir -p var/cache var/log public/books public/assets
 
 # Dump env for production (reads .env, produces .env.local.php)
 RUN composer dump-env prod
@@ -71,14 +69,14 @@ RUN composer dump-env prod
 RUN php bin/console importmap:install
 
 # Compile and fingerprint all assets into public/assets/
-RUN su www-data -s /bin/sh -c "APP_ENV=prod APP_DEBUG=0 php bin/console asset-map:compile --no-debug"
+RUN APP_ENV=prod APP_DEBUG=0 php bin/console asset-map:compile --no-debug
 
 # Warm up the Symfony cache
-RUN su www-data -s /bin/sh -c "APP_ENV=prod APP_DEBUG=0 php bin/console cache:warmup --no-debug"
+RUN APP_ENV=prod APP_DEBUG=0 php bin/console cache:warmup --no-debug
 
-# Final permission fix on everything created above
-RUN chown -R www-data:www-data var public/assets \
-    && chmod -R 775 var public/assets
+# Fix permissions last, after all files are created
+RUN chown -R www-data:www-data var public/assets public/books \
+    && chmod -R 775 var public/assets public/books
 
 # Expose HTTP
 EXPOSE 80
