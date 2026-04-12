@@ -10,6 +10,8 @@ RUN npm ci --prefer-offline
 
 COPY webpack.config.js postcss.config.js ./
 COPY assets/ assets/
+COPY templates/ templates/
+COPY src/ src/
 
 RUN npm run build
 
