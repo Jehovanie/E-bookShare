@@ -59,14 +59,16 @@ COPY . .
 # Compiled assets from Stage 1
 COPY --from=assets /app/public/build public/build/
 
-# Create writable directories, warm up cache as www-data, then fix all permissions
-RUN mkdir -p var/cache var/log public/books \
-    && chown -R www-data:www-data var public/books \
-    && chmod -R 775 var public/books \
+# Create writable directories, install JS vendor packages, compile assets, warm up cache
+RUN mkdir -p var/cache var/log public/books public/assets \
+    && chown -R www-data:www-data var public/books public/assets \
+    && chmod -R 775 var public/books public/assets \
     && composer dump-env prod \
+    && php bin/console importmap:install \
+    && su www-data -s /bin/sh -c "APP_ENV=prod php bin/console asset-map:compile --no-debug" \
     && su www-data -s /bin/sh -c "APP_ENV=prod php bin/console cache:warmup --no-debug" \
-    && chown -R www-data:www-data var \
-    && chmod -R 775 var
+    && chown -R www-data:www-data var public/assets \
+    && chmod -R 775 var public/assets
 
 # Expose HTTP
 EXPOSE 80
