@@ -92,8 +92,8 @@
 
         empty.remove();
         list.innerHTML = items.map(n => {
-            const icon    = n.type === 'like' ? '❤️' : '💬';
-            const verb    = n.type === 'like' ? 'a aimé votre livre' : 'a commenté votre livre';
+            const icon    = n.type === 'like' ? '❤️' : (n.type === 'new_book' ? '📚' : '💬');
+            const verb    = n.type === 'like' ? 'a aimé votre livre' : (n.type === 'new_book' ? 'a publié un nouveau livre' : 'a commenté votre livre');
             const unread  = !n.isRead ? 'bg-indigo-50' : '';
 
             return `

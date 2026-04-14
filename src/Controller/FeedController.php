@@ -12,6 +12,7 @@ use App\Repository\BookRepository;
 use App\Repository\FavoriteRepository;
 use App\Repository\LikeRepository;
 use App\Repository\NotificationRepository;
+use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
@@ -62,6 +63,7 @@ final class FeedController extends AbstractController
         Request $request,
         EntityManagerInterface $em,
         SluggerInterface $slugger,
+        UserRepository $userRepository,
     ): Response {
         $book = new Book();
         $form = $this->createForm(BookType::class, $book);
@@ -87,9 +89,25 @@ final class FeedController extends AbstractController
                 }
             }
 
-            $book->setOwner($this->getUser());
+            /** @var \App\Entity\User $publisher */
+            $publisher = $this->getUser();
+            $book->setOwner($publisher);
             $book->setUploadetat(new \DateTimeImmutable());
             $em->persist($book);
+
+            // Notify all admins of the new publication
+            foreach ($userRepository->findAdmins() as $admin) {
+                if ($admin === $publisher) {
+                    continue; // skip if the publisher is themselves an admin
+                }
+                $adminNotif = new Notification();
+                $adminNotif->setRecipient($admin);
+                $adminNotif->setSender($publisher);
+                $adminNotif->setBook($book);
+                $adminNotif->setType(Notification::TYPE_NEW_BOOK);
+                $em->persist($adminNotif);
+            }
+
             $em->flush();
 
             $this->addFlash('success', '📚 Votre livre a été publié avec succès !');
