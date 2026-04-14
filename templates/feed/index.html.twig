@@ -28,6 +28,11 @@
             <a href="{{ path('app_feed') }}" class="text-indigo-600 font-bold border-b-2 border-indigo-600 pb-0.5">Fil</a>
             <a href="#" class="hover:text-indigo-600 transition">Explorer</a>
             <a href="{{ path('app_my_books') }}" class="hover:text-indigo-600 transition">Mes livres</a>
+            {% if is_granted('ROLE_ADMIN') %}
+                <a href="{{ path('app_admin') }}" class="text-red-500 font-bold hover:text-red-600 transition flex items-center gap-1">
+                    ⚙️ Admin
+                </a>
+            {% endif %}
         </div>
 
         <div class="flex items-center gap-3">
@@ -75,7 +80,7 @@
             <a href="{{ path('app_my_books') }}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-indigo-600 transition">
                 <span>📚</span> Mes livres
             </a>
-            <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-indigo-600 transition">
+            <a href="{{ path('app_my_favorites') }}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-indigo-600 transition">
                 <span>❤️</span> Mes favoris
             </a>
             <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-indigo-600 transition">
@@ -175,6 +180,7 @@
                 {% set commentsCount = book.comments|length %}
                 {% set isOwnBook     = app.user == book.owner %}
                 {% set userLiked     = book.likes|filter(l => l.owner == app.user)|length > 0 %}
+                {% set userSaved     = book.id in userFavoriteIds %}
 
                 <article class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition overflow-hidden group">
 
@@ -262,6 +268,18 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 0 1-.923 1.785A5.969 5.969 0 0 0 6 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337Z"/>
                                         </svg>
                                         <span class="font-semibold {% if commentsCount > 0 %}text-indigo-400{% endif %}" id="comment-count-{{ book.id }}">{{ commentsCount }}</span>
+                                    </button>
+
+                                    <button
+                                        id="fav-btn-{{ book.id }}"
+                                        onclick="toggleFavorite({{ book.id }}, '{{ path('app_feed_favorite', {id: book.id}) }}')"
+                                        title="{{ userSaved ? 'Retirer des favoris' : 'Ajouter aux favoris' }}"
+                                        class="flex items-center gap-1.5 transition group/fav {{ userSaved ? 'text-amber-500' : 'hover:text-amber-500 text-gray-400' }}">
+                                        <svg class="w-4 h-4 group-hover/fav:scale-110 transition" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                             fill="{{ userSaved ? 'currentColor' : 'none' }}"
+                                             id="fav-icon-{{ book.id }}">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z"/>
+                                        </svg>
                                     </button>
                                 </div>
 
@@ -463,6 +481,40 @@ async function toggleLike(bookId, url) {
             countEl.classList.remove('text-red-500');
             if (data.count > 0) countEl.classList.add('text-red-400');
             else countEl.classList.remove('text-red-400');
+        }
+    } catch(e) {
+        console.error(e);
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+/* ── Favorites ──────────────────────────────────────────────── */
+async function toggleFavorite(bookId, url) {
+    const btn  = document.getElementById('fav-btn-' + bookId);
+    const icon = document.getElementById('fav-icon-' + bookId);
+    if (btn.disabled) return;
+    btn.disabled = true;
+
+    try {
+        const res  = await fetch(url, {
+            method:  'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        });
+        const data = await res.json();
+
+        if (!res.ok) return;
+
+        if (data.saved) {
+            icon.setAttribute('fill', 'currentColor');
+            btn.classList.add('text-amber-500');
+            btn.classList.remove('hover:text-amber-500', 'text-gray-400');
+            btn.title = 'Retirer des favoris';
+        } else {
+            icon.setAttribute('fill', 'none');
+            btn.classList.remove('text-amber-500');
+            btn.classList.add('hover:text-amber-500', 'text-gray-400');
+            btn.title = 'Ajouter aux favoris';
         }
     } catch(e) {
         console.error(e);

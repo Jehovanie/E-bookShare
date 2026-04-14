@@ -62,13 +62,31 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         return array_column($results, 'pseudo');
     }
 
-    //    public function findOneBySomeField($value): ?User
-    //    {
-    //        return $this->createQueryBuilder('u')
-    //            ->andWhere('u.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+    /** @return User[] */
+    public function findForAdmin(string $search = '', int $page = 1, int $perPage = 20): array
+    {
+        $qb = $this->createQueryBuilder('u')
+            ->orderBy('u.id', 'DESC')
+            ->setFirstResult(($page - 1) * $perPage)
+            ->setMaxResults($perPage);
+
+        if ($search !== '') {
+            $qb->where('LOWER(u.firstname) LIKE LOWER(:s) OR LOWER(u.lastname) LIKE LOWER(:s) OR LOWER(u.pseudo) LIKE LOWER(:s) OR LOWER(u.email) LIKE LOWER(:s)')
+               ->setParameter('s', '%' . $search . '%');
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
+    public function countForAdmin(string $search = ''): int
+    {
+        $qb = $this->createQueryBuilder('u')->select('COUNT(u.id)');
+
+        if ($search !== '') {
+            $qb->where('LOWER(u.firstname) LIKE LOWER(:s) OR LOWER(u.lastname) LIKE LOWER(:s) OR LOWER(u.pseudo) LIKE LOWER(:s) OR LOWER(u.email) LIKE LOWER(:s)')
+               ->setParameter('s', '%' . $search . '%');
+        }
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
 }

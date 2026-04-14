@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Book;
 use App\Repository\BookRepository;
+use App\Repository\FavoriteRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -46,5 +47,15 @@ final class BookController extends AbstractController
         $this->addFlash('success', '🗑️ Le livre "' . $book->getTitle() . '" a été supprimé.');
 
         return $this->redirectToRoute('app_my_books');
+    }
+
+    #[Route('/favorites', name: 'app_my_favorites', methods: ['GET'])]
+    public function favorites(FavoriteRepository $favoriteRepository): Response
+    {
+        $favorites = $favoriteRepository->findByOwner($this->getUser());
+
+        return $this->render('book/favorites.html.twig', [
+            'favorites' => $favorites,
+        ]);
     }
 }

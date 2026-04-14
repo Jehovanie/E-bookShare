@@ -54,4 +54,36 @@ class BookRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /** @return Book[] */
+    public function findForAdmin(string $search = '', int $page = 1, int $perPage = 20): array
+    {
+        $qb = $this->createQueryBuilder('b')
+            ->addSelect('owner')
+            ->join('b.owner', 'owner')
+            ->orderBy('b.uploadetat', 'DESC')
+            ->setFirstResult(($page - 1) * $perPage)
+            ->setMaxResults($perPage);
+
+        if ($search !== '') {
+            $qb->where('LOWER(b.title) LIKE LOWER(:s) OR LOWER(owner.pseudo) LIKE LOWER(:s) OR LOWER(owner.firstname) LIKE LOWER(:s)')
+               ->setParameter('s', '%' . $search . '%');
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
+    public function countForAdmin(string $search = ''): int
+    {
+        $qb = $this->createQueryBuilder('b')
+            ->select('COUNT(b.id)')
+            ->join('b.owner', 'owner');
+
+        if ($search !== '') {
+            $qb->where('LOWER(b.title) LIKE LOWER(:s) OR LOWER(owner.pseudo) LIKE LOWER(:s) OR LOWER(owner.firstname) LIKE LOWER(:s)')
+               ->setParameter('s', '%' . $search . '%');
+        }
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
 }

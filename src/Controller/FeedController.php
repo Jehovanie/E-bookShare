@@ -4,10 +4,12 @@ namespace App\Controller;
 
 use App\Entity\Book;
 use App\Entity\Comment;
+use App\Entity\Favorite;
 use App\Entity\Like;
 use App\Entity\Notification;
 use App\Form\BookType;
 use App\Repository\BookRepository;
+use App\Repository\FavoriteRepository;
 use App\Repository\LikeRepository;
 use App\Repository\NotificationRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -25,12 +27,19 @@ use Symfony\Component\String\Slugger\SluggerInterface;
 final class FeedController extends AbstractController
 {
     #[Route('', name: 'app_feed', methods: ['GET'])]
-    public function index(BookRepository $bookRepository, Request $request): Response
+    public function index(BookRepository $bookRepository, FavoriteRepository $favoriteRepository, Request $request): Response
     {
         $page    = max(1, (int) $request->query->get('page', 1));
         $perPage = 10;
         $total   = $bookRepository->countAll();
         $books   = $bookRepository->findFeed($page, $perPage);
+
+        /** @var \App\Entity\User $user */
+        $user = $this->getUser();
+        $userFavoriteIds = array_map(
+            fn($f) => $f->getBook()->getId(),
+            $favoriteRepository->findByOwner($user)
+        );
 
         $form = $this->createForm(BookType::class, new Book(), [
             'action' => $this->generateUrl('app_feed_publish'),
@@ -38,12 +47,13 @@ final class FeedController extends AbstractController
         ]);
 
         return $this->render('feed/index.html.twig', [
-            'books'    => $books,
-            'form'     => $form,
-            'page'     => $page,
-            'perPage'  => $perPage,
-            'total'    => $total,
-            'lastPage' => (int) ceil($total / $perPage),
+            'books'           => $books,
+            'form'            => $form,
+            'page'            => $page,
+            'perPage'         => $perPage,
+            'total'           => $total,
+            'lastPage'        => (int) ceil($total / $perPage),
+            'userFavoriteIds' => $userFavoriteIds,
         ]);
     }
 
@@ -87,16 +97,25 @@ final class FeedController extends AbstractController
             // Re-render feed with form errors
             /** @var \App\Repository\BookRepository $bookRepository */
             $bookRepository = $em->getRepository(Book::class);
+            $favoriteRepository = $em->getRepository(Favorite::class);
             $books  = $bookRepository->findFeed(1, 10);
             $total  = $bookRepository->countAll();
 
+            /** @var \App\Entity\User $user */
+            $user = $this->getUser();
+            $userFavoriteIds = array_map(
+                fn($f) => $f->getBook()->getId(),
+                $favoriteRepository->findByOwner($user)
+            );
+
             return $this->render('feed/index.html.twig', [
-                'books'    => $books,
-                'form'     => $form,
-                'page'     => 1,
-                'perPage'  => 10,
-                'total'    => $total,
-                'lastPage' => (int) ceil($total / 10),
+                'books'           => $books,
+                'form'            => $form,
+                'page'            => 1,
+                'perPage'         => 10,
+                'total'           => $total,
+                'lastPage'        => (int) ceil($total / 10),
+                'userFavoriteIds' => $userFavoriteIds,
             ]);
         }
 
@@ -193,5 +212,31 @@ final class FeedController extends AbstractController
                 'pseudo'    => $user->getPseudo(),
             ],
         ], 201);
+    }
+
+    #[Route('/favorite/{id}', name: 'app_feed_favorite', methods: ['POST'])]
+    public function favorite(
+        Book $book,
+        FavoriteRepository $favoriteRepository,
+        EntityManagerInterface $em,
+    ): JsonResponse {
+        /** @var \App\Entity\User $user */
+        $user     = $this->getUser();
+        $existing = $favoriteRepository->findOneByOwnerAndBook($user, $book);
+
+        if ($existing) {
+            $em->remove($existing);
+            $em->flush();
+            $saved = false;
+        } else {
+            $favorite = new Favorite();
+            $favorite->setOwner($user);
+            $favorite->setBook($book);
+            $em->persist($favorite);
+            $em->flush();
+            $saved = true;
+        }
+
+        return $this->json(['saved' => $saved]);
     }
 }

@@ -1,0 +1,93 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Dashboard — Admin EbookShare{% endblock %}
+{% block admin_title %}Tableau de bord{% endblock %}
+
+{% block admin_content %}
+
+{# ── STAT CARDS ───────────────────────────────────────────────── #}
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Utilisateurs</p>
+        <p class="text-3xl font-extrabold text-indigo-600">{{ totalUsers }}</p>
+        <a href="{{ path('app_admin_users') }}" class="text-xs text-indigo-400 hover:text-indigo-600 mt-1 inline-block">Voir tous →</a>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Publications</p>
+        <p class="text-3xl font-extrabold text-violet-600">{{ totalBooks }}</p>
+        <a href="{{ path('app_admin_books') }}" class="text-xs text-violet-400 hover:text-violet-600 mt-1 inline-block">Voir toutes →</a>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Moy. livres/user</p>
+        <p class="text-3xl font-extrabold text-teal-600">
+            {{ totalUsers > 0 ? (totalBooks / totalUsers)|round(1) : 0 }}
+        </p>
+    </div>
+    <div class="bg-gradient-to-br from-indigo-600 to-violet-600 rounded-2xl p-5 text-white">
+        <p class="text-xs font-bold text-indigo-200 uppercase tracking-wider mb-1">Plateforme</p>
+        <p class="text-lg font-extrabold">EbookShare</p>
+        <p class="text-xs text-indigo-200 mt-0.5">Panel d'administration</p>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    {# ── RECENT USERS ─────────────────────────────────────────── #}
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <h2 class="text-sm font-bold text-gray-800">Derniers utilisateurs</h2>
+            <a href="{{ path('app_admin_users') }}" class="text-xs text-indigo-500 hover:text-indigo-700 font-semibold">Voir tous</a>
+        </div>
+        <table class="w-full text-sm">
+            <tbody class="divide-y divide-gray-50">
+                {% for user in recentUsers %}
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-5 py-3">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-violet-500 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                                    {{ user.firstname|first|upper }}{{ user.lastname|first|upper }}
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-gray-800 leading-none">{{ user.firstname }} {{ user.lastname }}</p>
+                                    <p class="text-xs text-gray-400">@{{ user.pseudo }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-5 py-3 text-right">
+                            {% if 'ROLE_ADMIN' in user.roles %}
+                                <span class="bg-red-100 text-red-600 text-xs font-bold px-2 py-0.5 rounded-full">Admin</span>
+                            {% else %}
+                                <span class="bg-gray-100 text-gray-500 text-xs px-2 py-0.5 rounded-full">User</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {# ── RECENT BOOKS ─────────────────────────────────────────── #}
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <h2 class="text-sm font-bold text-gray-800">Dernières publications</h2>
+            <a href="{{ path('app_admin_books') }}" class="text-xs text-indigo-500 hover:text-indigo-700 font-semibold">Voir toutes</a>
+        </div>
+        <table class="w-full text-sm">
+            <tbody class="divide-y divide-gray-50">
+                {% for book in recentBooks %}
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-5 py-3">
+                            <p class="font-semibold text-gray-800 truncate max-w-[180px]">{{ book.title }}</p>
+                            <p class="text-xs text-gray-400">par @{{ book.owner.pseudo }}</p>
+                        </td>
+                        <td class="px-5 py-3 text-right text-xs text-gray-400">
+                            ❤️ {{ book.likes|length }} · 💬 {{ book.comments|length }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+{% endblock %}

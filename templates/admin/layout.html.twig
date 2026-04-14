@@ -1,0 +1,83 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<div class="min-h-screen bg-gray-50 flex">
+
+    {# ── SIDEBAR ─────────────────────────────────────────────── #}
+    <aside class="hidden md:flex flex-col w-56 bg-white border-r border-gray-100 min-h-screen fixed top-0 left-0 z-30">
+        {# Logo #}
+        <div class="h-14 flex items-center px-5 border-b border-gray-100">
+            <a href="{{ path('app_admin') }}" class="flex items-center gap-2 font-extrabold text-indigo-700 text-base">
+                📚 <span>Admin</span>
+            </a>
+        </div>
+
+        {# Nav #}
+        <nav class="flex-1 px-3 py-4 space-y-0.5 text-sm">
+            <a href="{{ path('app_admin') }}"
+               class="flex items-center gap-3 px-3 py-2 rounded-xl transition font-medium
+                      {{ app.request.attributes.get('_route') == 'app_admin' ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-600 hover:bg-gray-50 hover:text-indigo-600' }}">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+                Tableau de bord
+            </a>
+
+            <a href="{{ path('app_admin_users') }}"
+               class="flex items-center gap-3 px-3 py-2 rounded-xl transition font-medium
+                      {{ app.request.attributes.get('_route') starts with 'app_admin_user' ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-600 hover:bg-gray-50 hover:text-indigo-600' }}">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/>
+                </svg>
+                Utilisateurs
+            </a>
+
+            <a href="{{ path('app_admin_books') }}"
+               class="flex items-center gap-3 px-3 py-2 rounded-xl transition font-medium
+                      {{ app.request.attributes.get('_route') starts with 'app_admin_book' ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-600 hover:bg-gray-50 hover:text-indigo-600' }}">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/>
+                </svg>
+                Publications
+            </a>
+        </nav>
+
+        {# Footer #}
+        <div class="px-4 py-3 border-t border-gray-100 text-xs text-gray-400 space-y-1">
+            <p class="font-semibold text-gray-600 truncate">@{{ app.user.pseudo }}</p>
+            <div class="flex gap-2">
+                <a href="{{ path('app_feed') }}" class="hover:text-indigo-600 transition">← App</a>
+                <span>·</span>
+                <a href="{{ path('app_logout') }}" class="hover:text-red-500 transition">Déconnexion</a>
+            </div>
+        </div>
+    </aside>
+
+    {# ── MAIN ────────────────────────────────────────────────── #}
+    <div class="flex-1 md:ml-56 flex flex-col min-h-screen">
+
+        {# Top bar #}
+        <header class="h-14 bg-white border-b border-gray-100 sticky top-0 z-20 flex items-center px-6 gap-4">
+            <h1 class="text-sm font-extrabold text-gray-800 flex-1">{% block admin_title %}Administration{% endblock %}</h1>
+            <span class="text-xs bg-red-100 text-red-600 font-bold px-2 py-0.5 rounded-full">ADMIN</span>
+        </header>
+
+        {# Flash messages #}
+        <div class="px-6 pt-4 space-y-2">
+            {% for type, messages in app.flashes %}
+                {% for msg in messages %}
+                    <div class="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium
+                        {{ type == 'success' ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700' }}">
+                        {{ type == 'success' ? '✅' : '⚠️' }} {{ msg }}
+                    </div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+
+        {# Page content #}
+        <main class="flex-1 px-6 py-5">
+            {% block admin_content %}{% endblock %}
+        </main>
+    </div>
+</div>
+{% endblock %}
