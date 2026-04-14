@@ -1,0 +1,145 @@
+{# ── NOTIFICATION BELL ─────────────────────────────────────────
+   Usage: {{ include('_partials/notification_bell.html.twig') }}
+   Requires: notif_unread (injected via Twig global NotificationExtension)
+─────────────────────────────────────────────────────────────── #}
+<div class="relative" id="notif-wrapper">
+
+    {# Bell button #}
+    <button id="notif-btn"
+            onclick="toggleNotifDropdown()"
+            class="relative p-2 text-gray-400 hover:text-indigo-600 transition">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+        </svg>
+        {# Unread badge #}
+        <span id="notif-badge"
+              class="absolute top-0.5 right-0.5 min-w-[1.1rem] h-[1.1rem] px-0.5 rounded-full bg-red-500 text-white text-[0.6rem] font-bold flex items-center justify-center leading-none
+                     {{ notif_unread == 0 ? 'hidden' : '' }}">
+            {{ notif_unread > 99 ? '99+' : notif_unread }}
+        </span>
+    </button>
+
+    {# Dropdown panel #}
+    <div id="notif-dropdown"
+         class="hidden absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden">
+
+        {# Header #}
+        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+            <span class="text-sm font-bold text-gray-800">Notifications</span>
+            <button onclick="markAllRead()"
+                    class="text-xs text-indigo-500 hover:text-indigo-700 font-semibold transition">
+                Tout marquer lu
+            </button>
+        </div>
+
+        {# List (filled by JS) #}
+        <ul id="notif-list" class="max-h-80 overflow-y-auto divide-y divide-gray-50">
+            <li class="py-8 text-center text-sm text-gray-400" id="notif-empty">
+                Chargement…
+            </li>
+        </ul>
+
+    </div>
+</div>
+
+<script>
+(function () {
+    const NOTIF_URL      = '{{ path('app_notifications') }}';
+    const MARK_READ_URL  = '{{ path('app_notifications_mark_read') }}';
+
+    let dropdownOpen = false;
+    let loaded       = false;
+
+    window.toggleNotifDropdown = function () {
+        const dropdown = document.getElementById('notif-dropdown');
+        dropdownOpen = !dropdownOpen;
+        dropdown.classList.toggle('hidden', !dropdownOpen);
+
+        if (dropdownOpen && !loaded) {
+            loadNotifications();
+        }
+    };
+
+    // Close when clicking outside
+    document.addEventListener('click', function (e) {
+        const wrapper = document.getElementById('notif-wrapper');
+        if (dropdownOpen && !wrapper.contains(e.target)) {
+            document.getElementById('notif-dropdown').classList.add('hidden');
+            dropdownOpen = false;
+        }
+    });
+
+    async function loadNotifications() {
+        try {
+            const res  = await fetch(NOTIF_URL, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            const data = await res.json();
+            renderNotifications(data.items);
+            updateBadge(data.unread);
+            loaded = true;
+        } catch (e) {
+            document.getElementById('notif-empty').textContent = 'Erreur de chargement.';
+        }
+    }
+
+    function renderNotifications(items) {
+        const list  = document.getElementById('notif-list');
+        const empty = document.getElementById('notif-empty');
+
+        if (!items.length) {
+            empty.textContent = 'Aucune notification pour l\'instant.';
+            return;
+        }
+
+        empty.remove();
+        list.innerHTML = items.map(n => {
+            const icon    = n.type === 'like' ? '❤️' : '💬';
+            const verb    = n.type === 'like' ? 'a aimé votre livre' : 'a commenté votre livre';
+            const unread  = !n.isRead ? 'bg-indigo-50' : '';
+
+            return `
+                <li class="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition ${unread}">
+                    <div class="w-8 h-8 flex-shrink-0 rounded-full bg-gradient-to-br from-indigo-400 to-violet-500
+                                flex items-center justify-center text-white font-bold text-xs mt-0.5">
+                        ${n.sender.firstname[0].toUpperCase()}${n.sender.lastname[0].toUpperCase()}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs text-gray-700 leading-snug">
+                            <span class="font-bold">${n.sender.firstname} ${n.sender.lastname}</span>
+                            ${verb} <span class="mr-1">${icon}</span>
+                        </p>
+                        <p class="text-xs text-indigo-600 font-semibold truncate mt-0.5">📖 ${n.book.title}</p>
+                        <p class="text-xs text-gray-400 mt-0.5">${n.createdAt}</p>
+                    </div>
+                    ${!n.isRead ? '<span class="w-2 h-2 rounded-full bg-indigo-500 flex-shrink-0 mt-2"></span>' : ''}
+                </li>`;
+        }).join('');
+    }
+
+    function updateBadge(count) {
+        const badge = document.getElementById('notif-badge');
+        if (count > 0) {
+            badge.textContent = count > 99 ? '99+' : count;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    }
+
+    window.markAllRead = async function () {
+        await fetch(MARK_READ_URL, {
+            method:  'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        });
+        // Re-render without unread highlights
+        loaded = false;
+        loadNotifications();
+    };
+
+    // Reload notifications every 30 seconds when tab is active
+    setInterval(() => {
+        if (!document.hidden && loaded) {
+            loadNotifications();
+        }
+    }, 30000);
+})();
+</script>

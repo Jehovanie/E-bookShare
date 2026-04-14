@@ -5,9 +5,11 @@ namespace App\Controller;
 use App\Entity\Book;
 use App\Entity\Comment;
 use App\Entity\Like;
+use App\Entity\Notification;
 use App\Form\BookType;
 use App\Repository\BookRepository;
 use App\Repository\LikeRepository;
+use App\Repository\NotificationRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
@@ -105,6 +107,7 @@ final class FeedController extends AbstractController
     public function like(
         Book $book,
         LikeRepository $likeRepository,
+        NotificationRepository $notificationRepository,
         EntityManagerInterface $em,
     ): JsonResponse {
         /** @var \App\Entity\User $user */
@@ -120,19 +123,32 @@ final class FeedController extends AbstractController
             $like->setOwner($user);
             $like->setBook($book);
             $em->persist($like);
+
+            // Notify the book owner (not if liking own book)
+            if ($book->getOwner() !== $user) {
+                $notif = new Notification();
+                $notif->setRecipient($book->getOwner());
+                $notif->setSender($user);
+                $notif->setBook($book);
+                $notif->setType(Notification::TYPE_LIKE);
+                $em->persist($notif);
+            }
+
             $em->flush();
             $liked = true;
         }
 
         $count = $likeRepository->count(['book' => $book]);
+        $unread = $notificationRepository->countUnread($book->getOwner());
 
-        return $this->json(['liked' => $liked, 'count' => $count]);
+        return $this->json(['liked' => $liked, 'count' => $count, 'unread' => $unread]);
     }
 
     #[Route('/comment/{id}', name: 'app_feed_comment', methods: ['POST'])]
     public function comment(
         Book $book,
         Request $request,
+        NotificationRepository $notificationRepository,
         EntityManagerInterface $em,
     ): JsonResponse {
         $content = trim((string) $request->request->get('content', ''));
@@ -145,17 +161,27 @@ final class FeedController extends AbstractController
             return $this->json(['error' => 'Commentaire trop long (500 caractères max).'], 400);
         }
 
+        /** @var \App\Entity\User $user */
+        $user = $this->getUser();
+
         $comment = new Comment();
         $comment->setContent(mb_substr($content, 0, 500));
         $comment->setCreatedat(new \DateTimeImmutable());
-        $comment->setAuthor($this->getUser());
+        $comment->setAuthor($user);
         $comment->setBook($book);
-
         $em->persist($comment);
-        $em->flush();
 
-        /** @var \App\Entity\User $user */
-        $user = $this->getUser();
+        // Notify the book owner (not if commenting own book)
+        if ($book->getOwner() !== $user) {
+            $notif = new Notification();
+            $notif->setRecipient($book->getOwner());
+            $notif->setSender($user);
+            $notif->setBook($book);
+            $notif->setType(Notification::TYPE_COMMENT);
+            $em->persist($notif);
+        }
+
+        $em->flush();
 
         return $this->json([
             'id'        => $comment->getId(),

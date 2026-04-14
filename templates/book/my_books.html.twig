@@ -24,6 +24,7 @@
             <a href="{{ path('app_my_books') }}" class="text-indigo-600 font-bold border-b-2 border-indigo-600 pb-0.5">Mes livres</a>
         </div>
         <div class="flex items-center gap-3">
+            {{ include('_partials/notification_bell.html.twig') }}
             <div class="flex items-center gap-2">
                 <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white font-bold text-sm select-none">
                     {{ app.user.firstname|first|upper }}{{ app.user.lastname|first|upper }}
